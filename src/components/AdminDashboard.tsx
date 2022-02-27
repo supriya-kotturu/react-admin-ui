@@ -27,6 +27,7 @@ interface User extends HasId {
 }
 
 export const AdminDashboard = () => {
+	const [initUsers, setInitUsers] = useState<User[] | []>([]);
 	const [users, setUsers] = useState<User[] | []>([]);
 	const [deleteSelected, setDeleteSelected] = useState<boolean>(false);
 	const [selectedUsers, setSelectedUsers] = useState<GridRowId[] | []>([]);
@@ -36,6 +37,7 @@ export const AdminDashboard = () => {
 		const url = import.meta.env.VITE_USER_DATA_URL;
 		axios.get(url).then((res: AxiosResponse) => {
 			setUsers(res.data);
+			setInitUsers(res.data);
 		});
 	}, []);
 
@@ -65,14 +67,13 @@ export const AdminDashboard = () => {
 		[selectedUsers]
 	);
 
-	const searchUsers = useCallback(
-		(search: string) => {
-			setUsers((prevUsers) =>
-				prevUsers.filter((user) => user.name.includes(search))
-			);
-		},
-		[search]
-	);
+	useEffect(() => {
+		search.length > 0
+			? setUsers((prevUsers) =>
+					prevUsers.filter((user) => user.name.includes(search))
+			  )
+			: setUsers(initUsers);
+	}, [search]);
 
 	const columns: GridColDef[] = useMemo(
 		() => [
