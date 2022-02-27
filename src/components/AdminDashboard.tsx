@@ -16,7 +16,10 @@ import {
 import axios, { AxiosResponse } from 'axios';
 import { Input } from '@mui/material';
 
-interface User {
+interface HasId {
+	id: string;
+}
+interface User extends HasId {
 	id: string;
 	name: string;
 	email: string;
@@ -24,7 +27,6 @@ interface User {
 }
 
 export const AdminDashboard = () => {
-	const [initUsers, setInitUsers] = useState<User[] | []>([]);
 	const [users, setUsers] = useState<User[] | []>([]);
 	const [deleteSelected, setDeleteSelected] = useState<boolean>(false);
 	const [selectedUsers, setSelectedUsers] = useState<GridRowId[] | []>([]);
@@ -34,16 +36,16 @@ export const AdminDashboard = () => {
 		const url = import.meta.env.VITE_USER_DATA_URL;
 		axios.get(url).then((res: AxiosResponse) => {
 			setUsers(res.data);
-			setInitUsers(res.data);
 		});
 	}, []);
 
 	useEffect(() => {
 		deleteSelected &&
 			setUsers((prevUsers: User[]) =>
-				prevUsers.filter(
-					(user: User) => user && selectedUsers.indexOf(user.id) === -1
-				)
+				prevUsers.filter((user: User) => {
+					// @ts-ignore:next-line
+					return user && selectedUsers.indexOf(user.id) === -1;
+				})
 			);
 		setDeleteSelected(false);
 	}, [deleteSelected]);
@@ -56,21 +58,20 @@ export const AdminDashboard = () => {
 		[users]
 	);
 
-	useEffect(() => {
-		search.length > 0
-			? setUsers((prevUsers) =>
-					prevUsers.filter((user) =>
-						user.name.toLowerCase().includes(search.toLowerCase())
-					)
-			  )
-			: setUsers(initUsers);
-	}, [search]);
-
 	const handleSelectUsers = useCallback(
 		(ids: GridRowId[]): void => {
 			setSelectedUsers(ids);
 		},
 		[selectedUsers]
+	);
+
+	const searchUsers = useCallback(
+		(search: string) => {
+			setUsers((prevUsers) =>
+				prevUsers.filter((user) => user.name.includes(search))
+			);
+		},
+		[search]
 	);
 
 	const columns: GridColDef[] = useMemo(
@@ -121,6 +122,7 @@ export const AdminDashboard = () => {
 				pageSize={10}
 				pagination={true}
 				checkboxSelection
+				rowsPerPageOptions={[10]}
 				disableSelectionOnClick
 				onSelectionModelChange={(ids) => handleSelectUsers(ids)}
 			/>
